@@ -135,10 +135,10 @@ export default function RoleDebugPage() {
           description={
             <div>
               <Paragraph>
-                <strong>Manager Role:</strong> Emails containing "manager", "admin", or ending with "@hospital.com"
+                <strong>Manager Role:</strong> Emails containing &quot;manager&quot;, &quot;admin&quot;, or ending with &quot;@hospital.com&quot;
               </Paragraph>
               <Paragraph>
-                <strong>Employee Role:</strong> Emails containing "employee", "nurse", "doctor", or default fallback
+                <strong>Employee Role:</strong> Emails containing &quot;employee&quot;, &quot;nurse&quot;, &quot;doctor&quot;, or default fallback
               </Paragraph>
               <Paragraph>
                 <strong>Your assignment reason:</strong> {roleInfo?.assignmentReason}

@@ -1,4 +1,6 @@
+
 'use client';
+import Link from 'next/link';
 
 export default function VerifyEmailPage() {
   const handleRelogin = () => {
@@ -40,7 +42,7 @@ export default function VerifyEmailPage() {
         </h1>
         
         <p className="text-gray-600 mb-6">
-          We've sent a verification link to your email address. Please check your email and click the link to verify your account.
+          We&apos;ve sent a verification link to your email address. Please check your email and click the link to verify your account.
         </p>
         
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
@@ -54,7 +56,7 @@ export default function VerifyEmailPage() {
             onClick={handleRelogin}
             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
           >
-            I've verified my email - Continue to Dashboard
+            I&apos;ve verified my email - Continue to Dashboard
           </button>
           
           <button 
@@ -64,17 +66,17 @@ export default function VerifyEmailPage() {
             Resend verification email
           </button>
           
-          <a 
+          <Link 
             href="/api/auth/logout?sso=1"
             className="block text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             Log out and use a different account
-          </a>
+          </Link>
         </div>
         
         <div className="mt-6 text-xs text-gray-400">
           <p>
-            If you don't see the email, check your spam folder or contact support.
+            If you don&apos;t see the email, check your spam folder or contact support.
           </p>
         </div>
       </div>
