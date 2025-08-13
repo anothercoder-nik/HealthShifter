@@ -37,6 +37,7 @@ export default function RootLayout({ children }) {
           href="https://dev-luvdf3mdj35w8xeb.us.auth0.com"
           crossOrigin="anonymous"
         />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <RootStyleRegistry>
