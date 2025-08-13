@@ -18,14 +18,22 @@ const typeDefs = /* GraphQL */ `
     updatedAt: Int!
   }
 
+  type User {
+    id: ID!
+    email: String
+    name: String
+    role: String
+  }
+
   type Shift {
     id: ID!
     userId: String!
-  clockInAt: Int!
+    user: User
+    clockInAt: Int!
     clockInLat: Float
     clockInLng: Float
     clockInNote: String
-  clockOutAt: Int
+    clockOutAt: Int
     clockOutLat: Float
     clockOutLng: Float
     clockOutNote: String
@@ -37,7 +45,7 @@ const typeDefs = /* GraphQL */ `
     totalHoursPerStaff: [StaffHours!]!
   }
   type PeopleDay { day: String!, count: Int! }
-  type StaffHours { userId: String!, hours: Float! }
+  type StaffHours { userId: String!, userName: String!, hours: Float! }
 
   type Query {
     me: String
@@ -110,16 +118,23 @@ const resolvers = {
       };
     },
     shifts: async (parent, args, context) => {
-  const session = await getSession(context.request);
+      const session = await getSession(context.request);
       if (!session?.user?.sub) throw new Error("Unauthorized");
       const isManager = (session.user.roles || []).includes("manager") || session.user.role === "manager";
       let shifts;
       if (isManager) {
-        shifts = await prisma.shift.findMany({ orderBy: { clockInAt: "desc" } });
+        shifts = await prisma.shift.findMany({
+          include: { user: true },
+          orderBy: { clockInAt: "desc" }
+        });
       } else {
-        shifts = await prisma.shift.findMany({ where: { userId: session.user.sub }, orderBy: { clockInAt: "desc" } });
+        shifts = await prisma.shift.findMany({
+          where: { userId: session.user.sub },
+          include: { user: true },
+          orderBy: { clockInAt: "desc" }
+        });
       }
-      
+
       // Convert BigInt to numbers for GraphQL
       return shifts.map(s => ({
         ...s,
@@ -128,8 +143,74 @@ const resolvers = {
       }));
     },
     perimeter: () => prisma.setting.findUnique({ where: { key: "perimeter" } }),
-    metrics: async () => {
-      return { avgHoursPerDay: 0, peoplePerDay: [], totalHoursPerStaff: [] };
+    metrics: async (parent, args, context) => {
+      const session = await getSession(context.request);
+      const isManager = (session?.user?.roles || []).includes("manager");
+      if (!isManager) throw new Error("Manager access required");
+
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      // Get all completed shifts from last 7 days
+      const shifts = await prisma.shift.findMany({
+        where: {
+          clockInAt: { gte: sevenDaysAgo.getTime() },
+          clockOutAt: { not: null }
+        },
+        include: { user: true },
+        orderBy: { clockInAt: 'desc' }
+      });
+
+      // Calculate average hours per day
+      const dailyHours = {};
+      const dailyCounts = {};
+      const staffHours = {};
+
+      shifts.forEach(shift => {
+        const clockIn = new Date(Number(shift.clockInAt));
+        const clockOut = new Date(Number(shift.clockOutAt));
+        const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
+        const day = clockIn.toISOString().split('T')[0];
+
+        // Daily hours
+        if (!dailyHours[day]) dailyHours[day] = 0;
+        dailyHours[day] += hours;
+
+        // Daily counts
+        if (!dailyCounts[day]) dailyCounts[day] = new Set();
+        dailyCounts[day].add(shift.userId);
+
+        // Staff hours
+        if (!staffHours[shift.userId]) {
+          staffHours[shift.userId] = {
+            userId: shift.userId,
+            userName: shift.user?.name || shift.user?.email || 'Unknown',
+            hours: 0
+          };
+        }
+        staffHours[shift.userId].hours += hours;
+      });
+
+      // Calculate averages
+      const avgHoursPerDay = Object.keys(dailyHours).length > 0
+        ? Object.values(dailyHours).reduce((a, b) => a + b, 0) / Object.keys(dailyHours).length
+        : 0;
+
+      // Format people per day
+      const peoplePerDay = Object.entries(dailyCounts).map(([day, userSet]) => ({
+        day,
+        count: userSet.size
+      })).sort((a, b) => a.day.localeCompare(b.day));
+
+      // Format staff hours
+      const totalHoursPerStaff = Object.values(staffHours)
+        .sort((a, b) => b.hours - a.hours);
+
+      return {
+        avgHoursPerDay: Math.round(avgHoursPerDay * 100) / 100,
+        peoplePerDay,
+        totalHoursPerStaff
+      };
     }
   },
   Mutation: {

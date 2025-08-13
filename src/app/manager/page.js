@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons";
 import GlobalNavBar from "../../components/GlobalNavBar";
 import OfficeStatusControl from "../../components/OfficeStatusControl";
+import AnalyticsDashboard from "../../components/AnalyticsDashboard";
 
 const { Title, Text } = Typography;
 
@@ -23,7 +24,7 @@ export default function ManagerPage() {
   const { user, isManager } = useAuth();
   const { shifts, perimeter, fetchShifts, fetchPerimeter, getCurrentLocation } = useApp();
   const [localPerimeter, setLocalPerimeter] = useState({ lat: null, lng: null, radiusMeters: 2000 });
-  const [metrics, setMetrics] = useState({ avgHoursPerDay: 0, peoplePerDay: [], totalHoursPerStaff: [] });
+
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
@@ -44,9 +45,6 @@ export default function ManagerPage() {
     if (user && isManager()) {
       fetchShifts();
       fetchPerimeter();
-      fetch("/api/metrics")
-        .then(r => r.ok ? r.json() : { avgHoursPerDay:0, peoplePerDay:[], totalHoursPerStaff:[] })
-        .then(data => { if (!cancelled) setMetrics(data); });
     }
     return () => { cancelled = true; };
   }, [user?.sub, user?.roles]);
@@ -239,11 +237,10 @@ export default function ManagerPage() {
           <Col xs={24} sm={6}>
             <Card style={{ borderRadius: 16, boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
               <Statistic
-                title="Avg Hours/Day"
-                value={metrics.avgHoursPerDay}
+                title="Total Shifts"
+                value={shifts.length}
                 prefix={<ClockCircleOutlined style={{ color: "#52c41a" }} />}
                 valueStyle={{ color: "#52c41a", fontSize: "2.5rem" }}
-                precision={1}
               />
             </Card>
           </Col>
@@ -382,101 +379,16 @@ export default function ManagerPage() {
         </Row>
 
         {/* Weekly Performance */}
+        {/* Analytics Dashboard */}
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
           <Col xs={24}>
-            <Card 
-              title={
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <BarChartOutlined style={{ marginRight: 8, color: '#722ed1' }} />
-                  Weekly Performance Overview (Last 7 Days)
-                </div>
-              }
-              style={{ 
-                borderRadius: 16, 
+            <Card
+              style={{
+                borderRadius: 16,
                 boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
               }}
             >
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center', padding: 20 }}>
-                    <Progress 
-                      type="circle" 
-                      percent={Math.min(100, (metrics.avgHoursPerDay / 8) * 100)} 
-                      format={() => `${metrics.avgHoursPerDay.toFixed(1)}h`}
-                      strokeColor="#52c41a"
-                    />
-                    <div style={{ marginTop: 12 }}>
-                      <Text strong>Average Hours</Text>
-                      <br />
-                      <Text type="secondary">Per Day</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center', padding: 20 }}>
-                    <Progress 
-                      type="circle" 
-                      percent={Math.min(100, (activeShifts.length / 10) * 100)} 
-                      format={() => activeShifts.length}
-                      strokeColor="#1890ff"
-                    />
-                    <div style={{ marginTop: 12 }}>
-                      <Text strong>Active Staff</Text>
-                      <br />
-                      <Text type="secondary">Right Now</Text>
-                    </div>
-                  </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <div style={{ textAlign: 'center', padding: 20 }}>
-                    <Progress 
-                      type="circle" 
-                      percent={Math.min(100, (metrics.totalHoursPerStaff.length / 20) * 100)} 
-                      format={() => metrics.totalHoursPerStaff.length}
-                      strokeColor="#722ed1"
-                    />
-                    <div style={{ marginTop: 12 }}>
-                      <Text strong>Total Staff</Text>
-                      <br />
-                      <Text type="secondary">This Week</Text>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-
-              {/* Daily breakdown and staff totals */}
-              <Row gutter={[16, 16]} style={{ marginTop: 32 }}>
-                <Col xs={24} md={12}>
-                  <div style={{ padding: 16, background: "#f9f9f9", borderRadius: 8 }}>
-                    <Text strong style={{ display: "block", marginBottom: 12 }}>Daily Check-ins:</Text>
-                    {metrics.peoplePerDay.length > 0 ? (
-                      metrics.peoplePerDay.map((item, index) => (
-                        <div key={index} style={{ marginBottom: 8 }}>
-                          <Tag color="blue">{item.day}</Tag>
-                          <Text>{item.count} check-ins</Text>
-                        </div>
-                      ))
-                    ) : (
-                      <Text type="secondary">No data available</Text>
-                    )}
-                  </div>
-                </Col>
-                <Col xs={24} md={12}>
-                  <div style={{ padding: 16, background: "#f9f9f9", borderRadius: 8 }}>
-                    <Text strong style={{ display: "block", marginBottom: 12 }}>Staff Hours:</Text>
-                    {metrics.totalHoursPerStaff.length > 0 ? (
-                      metrics.totalHoursPerStaff.slice(0, 5).map((staff, index) => (
-                        <div key={index} style={{ marginBottom: 8 }}>
-                          <Tag color="green">{staff.userId.substring(0, 8)}...</Tag>
-                          <Text>{staff.hours.toFixed(1)} hours</Text>
-                        </div>
-                      ))
-                    ) : (
-                      <Text type="secondary">No data available</Text>
-                    )}
-                  </div>
-                </Col>
-              </Row>
+              <AnalyticsDashboard />
             </Card>
           </Col>
         </Row>
