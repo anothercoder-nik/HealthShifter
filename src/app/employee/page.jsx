@@ -61,21 +61,16 @@ export default function EmployeePage() {
     fetchUser();
   }, []);
 
-  // Step 1: Check if app is running as PWA (installed)
+  // Check if running as PWA
   useEffect(() => {
-    const checkPWAStatus = () => {
-      // Check if running in standalone mode (PWA installed)
+    const checkPWA = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      // Check iOS PWA mode
       const isIOSPWA = window.navigator.standalone === true;
-      // Set PWA status
       setIsPWA(isStandalone || isIOSPWA);
     };
-
-    checkPWAStatus();
+    checkPWA();
   }, []);
 
-  // Step 2: Request location permission
   const requestLocationPermission = async () => {
     try {
       const permission = await navigator.permissions.query({name: 'geolocation'});
@@ -84,19 +79,16 @@ export default function EmployeePage() {
       if (permission.state === 'granted') {
         startLocationMonitoring();
       } else if (permission.state === 'prompt') {
-        // Request permission by calling getCurrentPosition
         navigator.geolocation.getCurrentPosition(
           () => {
             setLocationPermission('granted');
             startLocationMonitoring();
           },
-          () => {
-            setLocationPermission('denied');
-          }
+          () => setLocationPermission('denied')
         );
       }
     } catch (error) {
-      console.log('Permission check failed:', error);
+      console.log('Permission error:', error);
     }
   };
 
