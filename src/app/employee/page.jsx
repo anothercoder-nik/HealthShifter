@@ -255,41 +255,72 @@ export default function EmployeePage() {
   return (
     <>
       {/* Navigation Bar */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '64px',
-        background: 'white',
-        borderBottom: '1px solid #d9d9d9',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
-        zIndex: 1000,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#1890ff' }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '64px',
+          background: 'white',
+          borderBottom: '1px solid #d9d9d9',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 12px',
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 'bold',
+            fontSize: '16px',
+            color: '#1890ff',
+            flex: '0 1 auto',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           Healthcare Shift Manager
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span>Welcome, {user?.name || user?.email}</span>
-          <Button
-            icon={<HomeOutlined />}
-            onClick={() => window.location.href = '/'}
+        <div
+          style={{
+            display: 'flex',
+            gap: '6px',
+            alignItems: 'center',
+            flex: '0 0 auto',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '12px',
+              maxWidth: '120px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              display: window.innerWidth > 480 ? 'inline' : 'none',
+            }}
           >
-            Home
-          </Button>
+            {user?.name || user?.email}
+          </span>
           <Button
+            size="small"
+            icon={<HomeOutlined />}
+            onClick={() => (window.location.href = '/')}
+          />
+          <Button
+            size="small"
             danger
             icon={<LogoutOutlined />}
-            onClick={() => window.location.href = '/api/auth/logout?sso=1'}
-          >
-            Logout
-          </Button>
+            onClick={() =>
+              (window.location.href = '/api/auth/logout?sso=1')
+            }
+          />
         </div>
       </div>
+
 
       <Content style={{
         minHeight: "100vh",

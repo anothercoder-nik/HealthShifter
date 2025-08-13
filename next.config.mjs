@@ -5,7 +5,149 @@ const withPWA = withPWAInit({
   dest: 'public', // Service worker output
   register: true, // Auto-register service worker
   skipWaiting: true, // Activate updated SW immediately
-  disable: process.env.NODE_ENV === 'development' // Disable PWA in dev mode
+  disable: process.env.NODE_ENV === 'development', // Disable PWA in dev mode
+
+  // Enhanced caching strategies for offline support
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts-webfonts',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 365 * 24 * 60 * 60 // 1 year
+        }
+      }
+    },
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis)\.com\/.*/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'google-fonts-stylesheets',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 7 * 24 * 60 * 60 // 1 week
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-font-assets',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 7 * 24 * 60 * 60 // 1 week
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-image-assets',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: /\/_next\/image\?url=.+$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-image',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:js)$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-js-assets',
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:css|less)$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-style-assets',
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: /\/_next\/data\/.+\/.+\.json$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-data',
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:json|xml|csv)$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'static-data-assets',
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    },
+    {
+      urlPattern: ({ url }) => {
+        return url.origin === self.origin && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/');
+      },
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'apis',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 16,
+          maxAgeSeconds: 5 * 60 // 5 minutes for API responses
+        }
+      }
+    },
+    {
+      urlPattern: ({ url }) => {
+        return url.origin === self.origin && !url.pathname.startsWith('/api/');
+      },
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'pages',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 32,
+          maxAgeSeconds: 24 * 60 * 60 // 1 day
+        }
+      }
+    }
+  ],
+
+  // Fallback pages for offline support
+  fallbacks: {
+    document: '/offline',
+    image: '/icons/android-launchericon-192-192.png',
+  },
+
+  // Additional PWA options
+  buildExcludes: [/middleware-manifest\.json$/],
+  scope: '/',
+  sw: 'sw.js',
 });
 
 /** @type {import('next').NextConfig} */

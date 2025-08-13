@@ -53,51 +53,65 @@ function HomePage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 24px',
+        padding: '0 12px',
         zIndex: 1000,
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#1890ff' }}>
-          Healthcare Shift Manager
+        <div style={{
+          fontWeight: 'bold',
+          fontSize: '16px',
+          color: '#1890ff',
+          flex: '0 1 auto',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}>
+          {user ? `Welcome, ${user.name || user.email}` : 'Healthcare Shift Manager'}
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {loading && <span>Loading...</span>}
+        <div style={{
+          display: 'flex',
+          gap: '6px',
+          alignItems: 'center',
+          flex: '0 0 auto'
+        }}>
+          {loading && <span style={{ fontSize: '12px' }}>Loading...</span>}
           {!loading && !user && (
             <Button
               type="primary"
               icon={<LoginOutlined />}
               onClick={() => window.location.href = '/api/auth/login'}
+              size="small"
             >
               Login
             </Button>
           )}
           {user && (
             <>
-              <span>Welcome, {user.name || user.email}</span>
               {hasRole('employee') && (
                 <Button
                   type="primary"
                   style={{ background: '#52c41a', borderColor: '#52c41a' }}
                   onClick={() => window.location.href = '/employee'}
+                  size="small"
                 >
-                  Employee Portal
+                  Employee
                 </Button>
               )}
               {hasRole('manager') && (
                 <Button
                   type="primary"
                   onClick={() => window.location.href = '/manager'}
+                  size="small"
                 >
-                  Manager Portal
+                  Manager
                 </Button>
               )}
               <Button
                 danger
                 icon={<LogoutOutlined />}
                 onClick={() => window.location.href = '/api/auth/logout?sso=1'}
-              >
-                Logout
-              </Button>
+                size="small"
+              />
             </>
           )}
         </div>

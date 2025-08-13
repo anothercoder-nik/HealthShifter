@@ -99,46 +99,51 @@ export default function GlobalNavBar() {
   if (isMobile) {
     return (
       <>
-        <Header 
-          style={{ 
-            position: 'fixed', 
-            zIndex: 1000, 
-            width: '100%', 
+        <Header
+          style={{
+            position: 'fixed',
+            zIndex: 1000,
+            width: '100%',
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-            padding: '0 16px',
+            padding: '0 12px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            height: '64px'
           }}
         >
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px',
+          <Link href="/" style={{ textDecoration: 'none', flex: '1', minWidth: 0 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
               color: '#1890ff',
               fontWeight: 'bold',
-              fontSize: '18px'
+              fontSize: '16px',
+              overflow: 'hidden'
             }}>
-              <ClockCircleOutlined style={{ fontSize: '20px' }} />
-              Lief
+              <ClockCircleOutlined style={{ fontSize: '18px', flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Lief
+              </span>
             </div>
           </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {user && (
-              <Avatar 
-                size="small" 
+              <Avatar
+                size="small"
                 icon={<UserOutlined />}
                 style={{ background: '#1890ff' }}
               />
             )}
-            <Button 
-              type="text" 
+            <Button
+              type="text"
               icon={<MenuOutlined />}
               onClick={() => setMobileMenuVisible(true)}
+              size="small"
             />
           </div>
         </Header>
@@ -211,20 +216,7 @@ export default function GlobalNavBar() {
 
   return (
     <>
-      {/* Debug element */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        background: 'red', 
-        color: 'white', 
-        padding: '10px',
-        zIndex: 9999 
-      }}>
-        NAVBAR DEBUG - User: {user ? 'Logged In' : 'Not Logged In'}
-      </div>
-      
-      <Header 
+      <Header
         style={{ 
           position: 'fixed', 
           zIndex: 1000, 
