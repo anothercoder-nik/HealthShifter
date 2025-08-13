@@ -20,6 +20,13 @@ export default function EmployeePage() {
   const [clockInNote, setClockInNote] = useState("");
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
+  // PWA Location Monitoring States
+  const [isPWA, setIsPWA] = useState(false);
+  const [locationPermission, setLocationPermission] = useState('default');
+  const [isInsideOffice, setIsInsideOffice] = useState(false);
+  const [locationWatcher, setLocationWatcher] = useState(null);
+  const [lastNotificationTime, setLastNotificationTime] = useState(0);
+
   // Helper function to check if user has employee role
   const hasRole = (userData, role) => {
     return userData?.roles?.includes(role) || userData?.[`https://shifter.dev/role`] === role;
@@ -53,6 +60,132 @@ export default function EmployeePage() {
     }
     fetchUser();
   }, []);
+
+  // Step 1: Check if app is running as PWA (installed)
+  useEffect(() => {
+    const checkPWAStatus = () => {
+      // Check if running in standalone mode (PWA installed)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      // Check iOS PWA mode
+      const isIOSPWA = window.navigator.standalone === true;
+      // Set PWA status
+      setIsPWA(isStandalone || isIOSPWA);
+    };
+
+    checkPWAStatus();
+  }, []);
+
+  // Step 2: Request location permission
+  const requestLocationPermission = async () => {
+    try {
+      const permission = await navigator.permissions.query({name: 'geolocation'});
+      setLocationPermission(permission.state);
+
+      if (permission.state === 'granted') {
+        startLocationMonitoring();
+      } else if (permission.state === 'prompt') {
+        // Request permission by calling getCurrentPosition
+        navigator.geolocation.getCurrentPosition(
+          () => {
+            setLocationPermission('granted');
+            startLocationMonitoring();
+          },
+          () => {
+            setLocationPermission('denied');
+          }
+        );
+      }
+    } catch (error) {
+      console.log('Permission check failed:', error);
+    }
+  };
+
+  // Step 4: Start continuous location monitoring
+  const startLocationMonitoring = () => {
+    if (!navigator.geolocation) {
+      console.log('Geolocation not supported');
+      return;
+    }
+
+    // Start watching position
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLon = position.coords.longitude;
+
+        // Check if we have office perimeter data
+        if (perimeter && perimeter.latitude && perimeter.longitude) {
+          const distance = calculateDistance(
+            userLat, userLon,
+            perimeter.latitude, perimeter.longitude
+          );
+
+          // Check if user is inside office perimeter
+          const isCurrentlyInside = distance <= perimeter.radius;
+
+          // Check if status changed (entered or left office)
+          if (isCurrentlyInside !== isInsideOffice) {
+            setIsInsideOffice(isCurrentlyInside);
+            showLocationNotification(isCurrentlyInside);
+          }
+        }
+      },
+      (error) => {
+        console.log('Location error:', error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 30000 // 30 seconds
+      }
+    );
+
+    setLocationWatcher(watchId);
+  };
+
+  // Step 5: Show notification when entering/leaving office
+  const showLocationNotification = (isInside) => {
+    // Prevent spam notifications (only once per 5 minutes)
+    const now = Date.now();
+    if (now - lastNotificationTime < 300000) { // 5 minutes
+      return;
+    }
+
+    // Request notification permission if needed
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      const title = isInside ? 'You entered the office area' : 'You left the office area';
+      const body = isInside ? 'Ready to clock in?' : 'Don\'t forget to clock out!';
+
+      new Notification(title, {
+        body: body,
+        icon: '/icons/android-launchericon-192-192.png',
+        badge: '/icons/android-launchericon-192-192.png',
+        tag: 'location-alert'
+      });
+
+      setLastNotificationTime(now);
+    }
+  };
+
+  // Step 6: Stop location monitoring
+  const stopLocationMonitoring = () => {
+    if (locationWatcher) {
+      navigator.geolocation.clearWatch(locationWatcher);
+      setLocationWatcher(null);
+    }
+  };
+
+  // Clean up location watcher when component unmounts
+  useEffect(() => {
+    return () => {
+      stopLocationMonitoring();
+    };
+  }, [locationWatcher]);
 
   // Get user location
   const getCurrentLocation = () => {
@@ -349,6 +482,96 @@ export default function EmployeePage() {
 
           {/* Office Status */}
           <OfficeStatusDisplay />
+
+          {/* PWA Location Monitoring - Only show if PWA is installed */}
+          {isPWA && (
+            <Card
+              title={
+                <span>
+                  <EnvironmentOutlined /> Automatic Location Monitoring
+                </span>
+              }
+              style={{ borderRadius: 16, marginBottom: 24 }}
+              extra={
+                locationPermission === 'granted' && locationWatcher ? (
+                  <Button
+                    danger
+                    size="small"
+                    onClick={stopLocationMonitoring}
+                  >
+                    Stop Monitoring
+                  </Button>
+                ) : (
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={requestLocationPermission}
+                    disabled={locationPermission === 'denied'}
+                  >
+                    Start Monitoring
+                  </Button>
+                )
+              }
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text>Location Permission:</Text>
+                  <Tag color={
+                    locationPermission === 'granted' ? 'green' :
+                    locationPermission === 'denied' ? 'red' : 'orange'
+                  }>
+                    {locationPermission.toUpperCase()}
+                  </Tag>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text>Monitoring Status:</Text>
+                  <Tag color={locationWatcher ? 'green' : 'default'}>
+                    {locationWatcher ? 'ACTIVE' : 'INACTIVE'}
+                  </Tag>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text>Office Area Status:</Text>
+                  <Tag color={isInsideOffice ? 'green' : 'blue'}>
+                    {isInsideOffice ? 'INSIDE OFFICE' : 'OUTSIDE OFFICE'}
+                  </Tag>
+                </div>
+
+                <Alert
+                  message="PWA Location Feature"
+                  description="This automatic location monitoring only works when the app is installed as a PWA. It will notify you when you enter or leave the office area."
+                  type="info"
+                  showIcon
+                  style={{ marginTop: 16 }}
+                />
+              </Space>
+            </Card>
+          )}
+
+          {/* Show install message if not PWA */}
+          {!isPWA && (
+            <Card
+              title={
+                <span>
+                  <EnvironmentOutlined /> Location Monitoring Unavailable
+                </span>
+              }
+              style={{ borderRadius: 16, marginBottom: 24 }}
+            >
+              <Alert
+                message="Install App Required"
+                description="Automatic location monitoring is only available when you install this app as a PWA. Please install the app to enable this feature."
+                type="warning"
+                showIcon
+                action={
+                  <Button size="small" type="primary">
+                    Install App
+                  </Button>
+                }
+              />
+            </Card>
+          )}
 
           {/* Status Cards */}
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
