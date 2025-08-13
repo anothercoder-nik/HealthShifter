@@ -145,72 +145,43 @@ const resolvers = {
     perimeter: () => prisma.setting.findUnique({ where: { key: "perimeter" } }),
     metrics: async (parent, args, context) => {
       const session = await getSession(context.request);
-      const isManager = (session?.user?.roles || []).includes("manager");
-      if (!isManager) throw new Error("Manager access required");
+      if (!session?.user?.roles?.includes("manager")) throw new Error("Manager only");
 
-      const now = new Date();
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-      // Get all completed shifts from last 7 days
+      const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const shifts = await prisma.shift.findMany({
-        where: {
-          clockInAt: { gte: sevenDaysAgo.getTime() },
-          clockOutAt: { not: null }
-        },
-        include: { user: true },
-        orderBy: { clockInAt: 'desc' }
+        where: { clockInAt: { gte: weekAgo }, clockOutAt: { not: null } },
+        include: { user: true }
       });
 
-      // Calculate average hours per day
       const dailyHours = {};
       const dailyCounts = {};
       const staffHours = {};
 
       shifts.forEach(shift => {
-        const clockIn = new Date(Number(shift.clockInAt));
-        const clockOut = new Date(Number(shift.clockOutAt));
-        const hours = (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60);
-        const day = clockIn.toISOString().split('T')[0];
+        const hours = (Number(shift.clockOutAt) - Number(shift.clockInAt)) / 3600000;
+        const day = new Date(Number(shift.clockInAt)).toISOString().split('T')[0];
 
-        // Daily hours
         if (!dailyHours[day]) dailyHours[day] = 0;
         dailyHours[day] += hours;
 
-        // Daily counts
         if (!dailyCounts[day]) dailyCounts[day] = new Set();
         dailyCounts[day].add(shift.userId);
 
-        // Staff hours
         if (!staffHours[shift.userId]) {
           staffHours[shift.userId] = {
             userId: shift.userId,
-            userName: shift.user?.name || shift.user?.email || 'Unknown',
+            userName: shift.user?.name || 'User',
             hours: 0
           };
         }
         staffHours[shift.userId].hours += hours;
       });
 
-      // Calculate averages
-      const avgHoursPerDay = Object.keys(dailyHours).length > 0
-        ? Object.values(dailyHours).reduce((a, b) => a + b, 0) / Object.keys(dailyHours).length
-        : 0;
+      const avgHoursPerDay = Object.values(dailyHours).reduce((a, b) => a + b, 0) / Math.max(Object.keys(dailyHours).length, 1);
+      const peoplePerDay = Object.entries(dailyCounts).map(([day, users]) => ({ day, count: users.size }));
+      const totalHoursPerStaff = Object.values(staffHours).sort((a, b) => b.hours - a.hours);
 
-      // Format people per day
-      const peoplePerDay = Object.entries(dailyCounts).map(([day, userSet]) => ({
-        day,
-        count: userSet.size
-      })).sort((a, b) => a.day.localeCompare(b.day));
-
-      // Format staff hours
-      const totalHoursPerStaff = Object.values(staffHours)
-        .sort((a, b) => b.hours - a.hours);
-
-      return {
-        avgHoursPerDay: Math.round(avgHoursPerDay * 100) / 100,
-        peoplePerDay,
-        totalHoursPerStaff
-      };
+      return { avgHoursPerDay, peoplePerDay, totalHoursPerStaff };
     }
   },
   Mutation: {
