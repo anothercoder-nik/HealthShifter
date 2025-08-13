@@ -379,7 +379,7 @@ export default function ManagerPage() {
         </Row>
 
         {/* Weekly Performance */}
-        {/* Analytics Dashboard */}
+        {/* Analytics Dashboard - Added GraphQL and Chart.js */}
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
           <Col xs={24}>
             <Card
@@ -388,6 +388,7 @@ export default function ManagerPage() {
                 boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
               }}
             >
+              {/* TODO: Could add more chart types later */}
               <AnalyticsDashboard />
             </Card>
           </Col>
