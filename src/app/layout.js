@@ -38,6 +38,7 @@ export default function RootLayout({ children }) {
           crossOrigin="anonymous"
         />
         <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2563eb" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <RootStyleRegistry>
