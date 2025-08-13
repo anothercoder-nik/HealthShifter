@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/* Critical CSS for better first load LCP - SSR Safe */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Prevent layout shifts */
+* {
+  box-sizing: border-box;
+}
+
+/* Optimize for mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve rendering performance */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Reduce CLS for Ant Design components */
+.ant-skeleton {
+  animation-duration: 1.5s;
+}
+
+.ant-card {
+  transition: box-shadow 0.3s; /* Keep minimal transitions */
+}
+
+/* Critical above-the-fold styles for immediate render */
+.critical-loading {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading state to prevent CLS */
+.loading-placeholder {
+  min-height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, transparent 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Prevent layout shifts */
+* {
+  box-sizing: border-box;
+}
+
+/* Optimize for mobile */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Improve rendering performance */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Reduce CLS for Ant Design components */
+.ant-skeleton {
+  animation-duration: 1.5s;
+}
+
+.ant-card {
+  transition: none; /* Disable transitions for better CLS */
+}
+
+/* Loading state to prevent CLS */
+.loading-placeholder {
+  min-height: 200px;
+  background: linear-gradient(90deg, #f0f0f0 25%, transparent 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

@@ -1,0 +1,49 @@
+// Prisma schema for Shifter
+// Using PostgreSQL with Prisma Accelerate for production deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String  @id
+  email         String? @unique
+  name          String?
+  role          String?
+  emailVerified Boolean @default(false)
+  shifts        Shift[]
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model OfficeStatus {
+  id          String @id @default("office")
+  isActive    Boolean @default(false)
+  activatedBy String?
+  activatedAt BigInt?
+  updatedAt   BigInt @default(0)
+}
+
+model Shift {
+  id           String @id
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+  clockInAt    BigInt
+  clockInLat   Float?
+  clockInLng   Float?
+  clockInNote  String?
+  clockOutAt   BigInt?
+  clockOutLat  Float?
+  clockOutLng  Float?
+  clockOutNote String?
+
+  @@index([userId, clockInAt])
+}
