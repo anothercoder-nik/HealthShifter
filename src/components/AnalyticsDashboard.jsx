@@ -37,6 +37,7 @@ export default function AnalyticsDashboard() {
 
   const fetchMetrics = async () => {
     setLoading(true);
+    setError(null); // Clear previous errors
     try {
       // graphql query - took me a while to figure this out
       const response = await fetch('/api/graphql', {
@@ -46,16 +47,29 @@ export default function AnalyticsDashboard() {
           query: `query { metrics { avgHoursPerDay peoplePerDay { day count } totalHoursPerStaff { userId userName hours } } }`
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
       const result = await response.json();
       if (result.errors) {
-        setError(result.errors[0].message);
+        console.error('GraphQL errors:', result.errors);
+        setError(result.errors[0].message || 'GraphQL query failed');
         return;
       }
+
+      if (!result.data || !result.data.metrics) {
+        throw new Error('Invalid response format');
+      }
+
       setMetrics(result.data.metrics);
     } catch (err) {
-      setError('Failed to load analytics'); // just basic error message
+      console.error('Analytics fetch error:', err);
+      setError(err.message || 'Failed to load analytics'); // just basic error message
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (loading) {

@@ -17,6 +17,7 @@ import {
 import GlobalNavBar from "../../components/GlobalNavBar";
 import OfficeStatusControl from "../../components/OfficeStatusControl";
 import AnalyticsDashboard from "../../components/AnalyticsDashboard";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 const { Title, Text } = Typography;
 
@@ -388,7 +389,9 @@ export default function ManagerPage() {
                 boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
               }}
             >
-              <AnalyticsDashboard />
+              <ErrorBoundary>
+                <AnalyticsDashboard />
+              </ErrorBoundary>
             </Card>
           </Col>
         </Row>
