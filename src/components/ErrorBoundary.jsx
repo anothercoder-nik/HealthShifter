@@ -20,23 +20,17 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px' }}>
-          <Alert
-            message="Something went wrong"
-            description="An error occurred while loading this component. Please try refreshing the page."
-            type="error"
-            showIcon
-            action={
-              <Button 
-                size="small" 
-                danger 
-                onClick={() => window.location.reload()}
-              >
-                Refresh Page
-              </Button>
-            }
-          />
-        </div>
+        <Alert
+          message="Something went wrong"
+          description="An error occurred while loading this component. Please try refreshing the page."
+          type="error"
+          showIcon
+          action={
+            <Button size="small" danger onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          }
+        />
       );
     }
 

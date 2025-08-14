@@ -7,21 +7,27 @@ import dynamic from 'next/dynamic';
 
 const { Title: AntTitle } = Typography;
 
-// load charts dynamically - found this online
-const Bar = dynamic(() => import('react-chartjs-2').then(mod => ({ default: mod.Bar })), {
-  loading: () => <div style={{ height: 200, background: '#f5f5f5', borderRadius: 4 }} />,
+// load charts dynamically with better error handling
+const Bar = dynamic(() => import('react-chartjs-2').then(mod => ({ default: mod.Bar })).catch(() => ({ default: () => <div>Chart loading failed</div> })), {
+  loading: () => <div style={{ height: 200, background: '#f5f5f5', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading chart...</div>,
   ssr: false
 });
 
-const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => ({ default: mod.Doughnut })), {
-  loading: () => <div style={{ height: 200, background: '#f5f5f5', borderRadius: 4 }} />,
+const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => ({ default: mod.Doughnut })).catch(() => ({ default: () => <div>Chart loading failed</div> })), {
+  loading: () => <div style={{ height: 200, background: '#f5f5f5', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading chart...</div>,
   ssr: false
 });
 
-// chart.js setup
+// chart.js setup with error handling
 if (typeof window !== 'undefined') {
   import('chart.js').then(({ Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement }) => {
-    Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+    try {
+      Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
+    } catch (error) {
+      console.warn('Chart.js registration failed:', error);
+    }
+  }).catch(error => {
+    console.warn('Chart.js import failed:', error);
   });
 }
 
@@ -35,9 +41,33 @@ export default function AnalyticsDashboard() {
     fetchMetrics();
   }, []);
 
+  // had to move these up here because of some react hooks error i was getting
+  const dailyData = useMemo(() => {
+    if (!metrics || !metrics.peoplePerDay) return { labels: [], datasets: [{ label: 'Daily Check-ins', data: [], backgroundColor: '#1890ff' }] };
+    return {
+      labels: metrics.peoplePerDay.map(item => item.day.split('-')[2]), // just show day
+      datasets: [{
+        label: 'Daily Check-ins',
+        data: metrics.peoplePerDay.map(item => item.count),
+        backgroundColor: '#1890ff',
+      }],
+    };
+  }, [metrics]);
+
+  const staffData = useMemo(() => {
+    if (!metrics || !metrics.totalHoursPerStaff) return { labels: [], datasets: [{ data: [], backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] };
+    const topStaff = metrics.totalHoursPerStaff.slice(0, 5);
+    return {
+      labels: topStaff.map(staff => staff.userName.split(' ')[0]), // first name
+      datasets: [{
+        data: topStaff.map(staff => staff.hours),
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'], // copied from stackoverflow
+      }],
+    };
+  }, [metrics]);
+
   const fetchMetrics = async () => {
     setLoading(true);
-    setError(null); // Clear previous errors
     try {
       // graphql query - took me a while to figure this out
       const response = await fetch('/api/graphql', {
@@ -48,28 +78,16 @@ export default function AnalyticsDashboard() {
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
       const result = await response.json();
       if (result.errors) {
-        console.error('GraphQL errors:', result.errors);
-        setError(result.errors[0].message || 'GraphQL query failed');
+        setError(result.errors[0].message);
         return;
       }
-
-      if (!result.data || !result.data.metrics) {
-        throw new Error('Invalid response format');
-      }
-
       setMetrics(result.data.metrics);
     } catch (err) {
-      console.error('Analytics fetch error:', err);
-      setError(err.message || 'Failed to load analytics'); // just basic error message
-    } finally {
-      setLoading(false);
+      setError('Failed to load analytics'); // just basic error message
     }
+    setLoading(false);
   };
 
   if (loading) {
@@ -93,23 +111,7 @@ export default function AnalyticsDashboard() {
   if (error) return <Alert message="Error loading analytics" type="error" />;
   if (!metrics) return null;
 
-  // chart data setup
-  const dailyData = useMemo(() => ({
-    labels: metrics.peoplePerDay.map(item => item.day.split('-')[2]), // just show day
-    datasets: [{
-      label: 'Daily Check-ins',
-      data: metrics.peoplePerDay.map(item => item.count),
-      backgroundColor: '#1890ff',
-    }],
-  }), [metrics.peoplePerDay]);
 
-  const staffData = useMemo(() => ({
-    labels: metrics.totalHoursPerStaff.slice(0, 5).map(staff => staff.userName.split(' ')[0]), // first name
-    datasets: [{
-      data: metrics.totalHoursPerStaff.slice(0, 5).map(staff => staff.hours),
-      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'], // copied from stackoverflow
-    }],
-  }), [metrics.totalHoursPerStaff]);
 
   const chartOptions = { responsive: true }; // basic options
 
