@@ -12,7 +12,6 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
-  // Get user info when page loads
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -27,7 +26,7 @@ function HomePage() {
       } catch (error) {
         console.log('Not logged in');
       } finally {
-        setLoading(false); // Set loading to false when done
+        setLoading(false); // done loading
       }
     }
     fetchUser();

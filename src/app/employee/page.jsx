@@ -92,7 +92,7 @@ export default function EmployeePage() {
     }
   };
 
-  // Step 4: Start continuous location monitoring
+  // start watching location
   const startLocationMonitoring = () => {
     if (!navigator.geolocation) {
       console.log('Geolocation not supported');
@@ -135,11 +135,11 @@ export default function EmployeePage() {
     setLocationWatcher(watchId);
   };
 
-  // Step 5: Show notification when entering/leaving office
+  // show notification for location changes
   const showLocationNotification = (isInside) => {
-    // Prevent spam notifications (only once per 5 minutes)
+    // dont spam notifications
     const now = Date.now();
-    if (now - lastNotificationTime < 300000) { // 5 minutes
+    if (now - lastNotificationTime < 300000) { // 5 min cooldown
       return;
     }
 
@@ -164,7 +164,7 @@ export default function EmployeePage() {
     }
   };
 
-  // Step 6: Stop location monitoring
+  // stop watching location
   const stopLocationMonitoring = () => {
     if (locationWatcher) {
       navigator.geolocation.clearWatch(locationWatcher);

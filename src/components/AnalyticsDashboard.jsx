@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 
 const { Title: AntTitle } = Typography;
 
-// Lazy load charts to improve initial load time
+// load charts dynamically - found this online
 const Bar = dynamic(() => import('react-chartjs-2').then(mod => ({ default: mod.Bar })), {
   loading: () => <div style={{ height: 200, background: '#f5f5f5', borderRadius: 4 }} />,
   ssr: false
@@ -18,7 +18,7 @@ const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => ({ default:
   ssr: false
 });
 
-// Register Chart.js components only when needed
+// chart.js setup
 if (typeof window !== 'undefined') {
   import('chart.js').then(({ Chart, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement }) => {
     Chart.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -26,8 +26,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default function AnalyticsDashboard() {
-  // TODO: Add user auth check here (currently handled by GraphQL)
-  // Using dynamic imports for better performance - charts load when needed
+  // need to add auth check later, graphql handles it for now
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,10 +35,10 @@ export default function AnalyticsDashboard() {
     fetchMetrics();
   }, []);
 
-  // Basic GraphQL query - learned from documentation
   const fetchMetrics = async () => {
     setLoading(true);
     try {
+      // graphql query - took me a while to figure this out
       const response = await fetch('/api/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +53,7 @@ export default function AnalyticsDashboard() {
       }
       setMetrics(result.data.metrics);
     } catch (err) {
-      setError('Failed to load analytics'); // Generic error for now
+      setError('Failed to load analytics'); // just basic error message
     }
     setLoading(false);
   };
@@ -80,28 +79,26 @@ export default function AnalyticsDashboard() {
   if (error) return <Alert message="Error loading analytics" type="error" />;
   if (!metrics) return null;
 
-  // Memoize chart data to avoid recalculating on every render
+  // chart data setup
   const dailyData = useMemo(() => ({
-    labels: metrics.peoplePerDay.map(item => item.day.split('-')[2]), // Just show day number
+    labels: metrics.peoplePerDay.map(item => item.day.split('-')[2]), // just show day
     datasets: [{
       label: 'Daily Check-ins',
       data: metrics.peoplePerDay.map(item => item.count),
-      backgroundColor: '#1890ff', // Single color for now
+      backgroundColor: '#1890ff',
     }],
   }), [metrics.peoplePerDay]);
 
   const staffData = useMemo(() => ({
-    labels: metrics.totalHoursPerStaff.slice(0, 5).map(staff => staff.userName.split(' ')[0]), // First name only
+    labels: metrics.totalHoursPerStaff.slice(0, 5).map(staff => staff.userName.split(' ')[0]), // first name
     datasets: [{
       data: metrics.totalHoursPerStaff.slice(0, 5).map(staff => staff.hours),
-      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'], // Found these colors online
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'], // copied from stackoverflow
     }],
   }), [metrics.totalHoursPerStaff]);
 
-  // Basic Chart.js setup - keeping it simple
-  const chartOptions = { responsive: true }; // TODO: Add more sophisticated options later
+  const chartOptions = { responsive: true }; // basic options
 
-  // Basic table columns - might add sorting later
   const staffColumns = [
     { title: 'Staff', dataIndex: 'userName', key: 'name' },
     { title: 'Hours', dataIndex: 'hours', key: 'hours', render: (h) => `${h.toFixed(1)}h` },
@@ -111,7 +108,6 @@ export default function AnalyticsDashboard() {
     <div>
       <AntTitle level={3}>Analytics</AntTitle>
 
-      {/* Basic metrics cards - keeping it simple for now */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={8}>
           <Statistic title="Avg Hours/Day" value={metrics.avgHoursPerDay} precision={1} />

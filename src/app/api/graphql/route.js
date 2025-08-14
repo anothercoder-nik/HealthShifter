@@ -147,21 +147,20 @@ const resolvers = {
       const session = await getSession(context.request);
       if (!session?.user?.roles?.includes("manager")) throw new Error("Manager only");
 
-      // Get last 7 days of data - simple approach
+      // get last week data
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const shifts = await prisma.shift.findMany({
         where: { clockInAt: { gte: weekAgo }, clockOutAt: { not: null } },
         include: { user: true }
       });
 
-      // Basic calculations - could optimize this later
       const dailyHours = {};
       const dailyCounts = {};
       const staffHours = {};
 
       shifts.forEach(shift => {
-        const hours = (Number(shift.clockOutAt) - Number(shift.clockInAt)) / 3600000; // Convert to hours
-        const day = new Date(Number(shift.clockInAt)).toISOString().split('T')[0]; // Simple date format
+        const hours = (Number(shift.clockOutAt) - Number(shift.clockInAt)) / 3600000; // ms to hours
+        const day = new Date(Number(shift.clockInAt)).toISOString().split('T')[0];
 
         if (!dailyHours[day]) dailyHours[day] = 0;
         dailyHours[day] += hours;
@@ -172,14 +171,13 @@ const resolvers = {
         if (!staffHours[shift.userId]) {
           staffHours[shift.userId] = {
             userId: shift.userId,
-            userName: shift.user?.name || 'User', // Fallback name
+            userName: shift.user?.name || 'User',
             hours: 0
           };
         }
         staffHours[shift.userId].hours += hours;
       });
 
-      // Simple aggregations
       const avgHoursPerDay = Object.values(dailyHours).reduce((a, b) => a + b, 0) / Math.max(Object.keys(dailyHours).length, 1);
       const peoplePerDay = Object.entries(dailyCounts).map(([day, users]) => ({ day, count: users.size }));
       const totalHoursPerStaff = Object.values(staffHours).sort((a, b) => b.hours - a.hours);
