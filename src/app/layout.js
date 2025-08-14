@@ -4,7 +4,7 @@ import RootStyleRegistry from "./RootStyleRegistry";
 import PerformanceMonitor from "../components/PerformanceMonitor";
 import PWAInstallPrompt from "../components/PWAInstallPrompt";
 
-// Font loading optimization
+// Font setup
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

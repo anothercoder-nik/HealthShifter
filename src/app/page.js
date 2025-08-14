@@ -12,11 +12,11 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
-  // Simple hook to get user info
+  // Get user info when page loads
   useEffect(() => {
     async function fetchUser() {
       try {
-  const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
@@ -27,7 +27,7 @@ function HomePage() {
       } catch (error) {
         console.log('Not logged in');
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false when done
       }
     }
     fetchUser();
@@ -140,16 +140,16 @@ function HomePage() {
             <Paragraph style={{ color: "rgba(255,255,255,0.9)", fontSize: "1.3rem", marginBottom: 32 }}>
               Professional shift management and time tracking for healthcare professionals
             </Paragraph>
-            
+
             {!user && !loading && (
               <Button
                 type="primary"
                 size="large"
                 icon={<LoginOutlined />}
                 onClick={() => window.location.href = '/api/auth/login'}
-                style={{ 
-                  height: "50px", 
-                  fontSize: "18px", 
+                style={{
+                  height: "50px",
+                  fontSize: "18px",
                   borderRadius: "25px",
                   background: "#1890ff",
                   borderColor: "#1890ff"
@@ -158,7 +158,7 @@ function HomePage() {
                 Get Started - Login
               </Button>
             )}
-            
+
             {user && (
               <Space size="large">
                 {hasRole('employee') && (
